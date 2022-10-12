@@ -1,3 +1,4 @@
+import math
 from pkg_resources import empty_provider
 from . import boot
 
@@ -16,6 +17,15 @@ with open('adams.dd', 'rb') as file:
         2 * int.from_bytes(parsed_boot.bytes_per_sector,
                            byteorder='little') + 512
     root_dir_entries_list = []
+   
+    root_size = int(math.ceil((int.from_bytes(parsed_boot.root_entry_count, byteorder='little')*32)/int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little')))
+
+    data_start = (512 * int.from_bytes(parsed_boot.reserved_sectors_count, byteorder='little')) + (int.from_bytes(parsed_boot.table_size_16, byteorder='little') * int.from_bytes(parsed_boot.table_count, byteorder='little')) + root_size
+    
+    print('root_size:', root_size)
+    print('data_start:', data_start)
+
+
     print(root_dir_offset+int(rootDirSectors) * int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little'))
     for i in range(0, int(rootDirSectors) * int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little'), 32):
         file.seek(root_dir_offset+i)
