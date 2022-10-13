@@ -1,39 +1,27 @@
 import math
-from pkg_resources import empty_provider
 from . import boot
 
 with open('adams.dd', 'rb') as file:
     parsed_boot = boot.Boot(file.read())
-    print(parsed_boot.oem_name.decode('ascii'))
-    print(int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little'))
-    print(parsed_boot.system_identifier.decode('ascii'))
-    print(parsed_boot.volume_label.decode('ascii'))
-    rootDirSectors = int(int.from_bytes(parsed_boot.root_entry_count, byteorder='little')
-                         * 32) / int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little')
-    dataSec = int.from_bytes(parsed_boot.total_sectors_16, byteorder='little') - (int.from_bytes(parsed_boot.reserved_sectors_count, byteorder='little') + (
-        int.from_bytes(parsed_boot.table_count, byteorder='little') * int.from_bytes(parsed_boot.table_size_16, byteorder='little')) + rootDirSectors)
-    print(dataSec)
-    root_dir_offset = int.from_bytes(parsed_boot.table_size_16, byteorder='little') * \
-        2 * int.from_bytes(parsed_boot.bytes_per_sector,
-                           byteorder='little') + 512
+    print(parsed_boot.oem_name.as_ascii())
+    print(int(parsed_boot.bytes_per_sector))
+    print(parsed_boot.system_identifier.as_ascii())
+    print(parsed_boot.volume_label.as_ascii())
+    rootDirSectors = int(parsed_boot.root_entry_count) * 32 / int(parsed_boot.bytes_per_sector)
+    dataSec = int(parsed_boot.total_sectors_16) - int(parsed_boot.reserved_sectors_count) + int(parsed_boot.table_count) * int(parsed_boot.table_size_16)
+    root_dir_offset = int(parsed_boot.table_size_16) * 2 * int(parsed_boot.bytes_per_sector) + 512
     root_dir_entries_list = []
-   
-    root_size = int(math.ceil((int.from_bytes(parsed_boot.root_entry_count, byteorder='little')*32)/int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little')))
+    root_size = int(parsed_boot.root_entry_count) * 32 / int(parsed_boot.bytes_per_sector)
 
-    data_start = (512 * int.from_bytes(parsed_boot.reserved_sectors_count, byteorder='little')) + (int.from_bytes(parsed_boot.table_size_16, byteorder='little') * int.from_bytes(parsed_boot.table_count, byteorder='little')) + root_size
-    
-    print('root_size:', root_size)
-    print('data_start:', data_start)
-
-
-    print(root_dir_offset+int(rootDirSectors) * int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little'))
-    for i in range(0, int(rootDirSectors) * int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little'), 32):
-        file.seek(root_dir_offset+i)
+    data_start = 512 * int(parsed_boot.reserved_sectors_count) + int(parsed_boot.table_size_16) * int(parsed_boot.table_count) + root_size
+    for i in range(0, int(rootDirSectors) * int(parsed_boot.bytes_per_sector), 32):
+        file.seek(root_dir_offset + i)
         entry_bytes = file.read(32)
         try:
             dir_entry = boot.RootDirEntry(entry_bytes)
-            print(dir_entry.file_name)
-            root_dir_entries_list.append(dir_entry)
-        except ValueError:
+            print(f'{dir_entry.file_name} - {dir_entry.attribute}')
+            if dir_entry.attribute == 'ARCHIVE':
+                print(f'{int(dir_entry.first_cluster_low)}')
+        except ValueError as e:
             pass
-
+        root_dir_entries_list.append(dir_entry)
