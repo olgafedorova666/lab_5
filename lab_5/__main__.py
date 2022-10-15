@@ -22,9 +22,8 @@ with open('adams.dd', 'rb') as file:
     
     print('root_dir_sectors', root_dir_sectors)
     print('root_dir_offset', root_dir_offset)
-    print('root_size', root_size)
+    print('root_size', root_size * 512)
     
-
     print(root_dir_offset+int(rootDirSectors) * int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little'))
     data_offset = root_dir_offset+int(rootDirSectors) * int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little')
     for i in range(0, int(rootDirSectors) * int.from_bytes(parsed_boot.bytes_per_sector, byteorder='little'), 32):
